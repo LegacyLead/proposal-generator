@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOWForgeX - AI Proposal & SOW Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- html2pdf.js CDN for browser-based PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+
+    <!-- Navbar -->
+    <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-2">
+            <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">SOWForgeX</span>
+            <span class="text-xs bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-full font-medium">SaaS Tool</span>
+        </div>
+        <div class="text-sm text-slate-400 flex items-center gap-2">
+            <span>Free Credits Remaining:</span>
+            <span id="credit-count" class="font-bold text-slate-200 bg-slate-800 px-2.5 py-1 rounded">2</span>
+        </div>
+    </nav>
+
+    <!-- Main Dashboard Container -->
+    <main class="max-w-7xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Input Panel (5 cols) -->
+        <div class="lg:col-span-5 bg-slate-850 border border-slate-800 rounded-2xl p-6 shadow-xl h-fit">
+            <h2 class="text-lg font-semibold mb-1 text-slate-200">Project Parameters</h2>
+            <p class="text-sm text-slate-400 mb-6">Fill in the core details to generate a legally-defensible SOW.</p>
+            
+            <form id="proposal-form" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Project Title</label>
+                    <input type="text" id="project-title" required placeholder="e.g., E-Commerce Platform Development" 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Client / Company</label>
+                        <input type="text" id="client-name" required placeholder="e.g., Acme Corp" 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Budget ($)</label>
+                        <input type="text" id="project-budget" required placeholder="e.g., 5,000" 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Project Timeline</label>
+                    <input type="text" id="project-timeline" required placeholder="e.g., 6 weeks (Starting July 1st)" 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Core Goals & Scope</label>
+                    <textarea id="project-goals" required rows="4" placeholder="Describe what you are building, the main problems this solves, and key technology stacks involved..." 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Key Deliverables</label>
+                    <textarea id="project-deliverables" required rows="3" placeholder="List the primary deliverables separated by commas (e.g., Figma wireframes, Next.js frontend, Supabase setup, Admin panel)" 
+                        class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 text-sm focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+                </div>
+
+                <button type="submit" id="submit-btn"
+                    class="w-full bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-indigo-500/10 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span>Generate Document</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Right Column: Document Preview Panel (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col h-[calc(100vh-12rem)] min-h-[500px]">
+            <!-- Action Bar -->
+            <div class="bg-slate-850 border border-slate-800 border-b-0 rounded-t-2xl px-6 py-4 flex justify-between items-center">
+                <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Document Output
+                </h3>
+                <div class="flex gap-2">
+                    <button id="copy-btn" disabled class="bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium px-3 py-2 rounded-lg transition cursor-pointer">
+                        Copy Text
+                    </button>
+                    <button id="pdf-btn" disabled class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-medium px-3 py-2 rounded-lg transition cursor-pointer">
+                        Download PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview Paper Area -->
+            <div class="bg-slate-950 border border-slate-800 rounded-b-2xl p-8 overflow-y-auto flex-1 relative prose prose-invert max-w-none">
+                
+                <!-- Initial State Empty State Wrapper -->
+                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-slate-950 rounded-b-2xl z-10">
+                    <div class="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    </div>
+                    <h4 class="text-slate-300 font-medium mb-1">No document generated yet</h4>
+                    <p class="text-xs text-slate-500 max-w-xs">Fill out the parameters on the left and click generate to forge your scope of work.</p>
+                </div>
+
+                <!-- Loading Overlay -->
+                <div id="loading-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-6 bg-slate-950/90 rounded-b-2xl hidden z-20">
+                    <div class="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <h4 class="text-slate-300 font-medium mb-1">AI Engine Processing...</h4>
+                    <p class="text-xs text-slate-500 max-w-xs">Drafting terms, scoping milestones, and establishing safety rules.</p>
+                </div>
+
+                <!-- Paywall Overlay Block -->
+                <div id="paywall-state" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-slate-950/95 rounded-b-2xl hidden z-30">
+                    <div class="max-w-sm bg-slate-900 border border-slate-800 p-6 rounded-xl shadow-2xl">
+                        <span class="text-2xl mb-2 block">💡</span>
+                        <h4 class="text-slate-200 font-bold text-lg mb-2">Free Limit Reached</h4>
+                        <p class="text-xs text-slate-400 mb-6">You have used your 2 free document generations for today. Unlock unlimited high-converting proposals instantly.</p>
+                        <!-- Simulated Payment Button -->
+                        <button onclick="alert('Hook up your Lemon Squeezy payment link here next!')" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white text-sm font-semibold py-3 px-4 rounded-xl shadow-lg transition cursor-pointer">
+                            Upgrade to Premium ($12)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Target Element for Rendered Document Content -->
+                <div id="document-content" class="text-slate-300 space-y-4 hidden text-sm leading-relaxed">
+                    <!-- Dynamic HTML Content Injected Here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Client-Side Application Scripts -->
+    <script>
+        // State tracking variables stored in browser memory
+        let freeCredits = parseInt(localStorage.getItem('sow_credits')) || 2;
+        document.getElementById('credit-count').innerText = freeCredits;
+
+        const form = document.getElementById('proposal-form');
+        const emptyState = document.getElementById('empty-state');
+        const loadingState = document.getElementById('loading-state');
+        const paywallState = document.getElementById('paywall-state');
+        const docContent = document.getElementById('document-content');
+        const copyBtn = document.getElementById('copy-btn');
+        const pdfBtn = document.getElementById('pdf-btn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Guard rails checking for credit allowance
+            if (freeCredits <= 0) {
+                paywallState.classList.remove('hidden');
+                return;
+            }
+
+            // Pull inputs securely
+            const payload = {
+                title: document.getElementById('project-title').value,
+                client: document.getElementById('client-name').value,
+                budget: document.getElementById('project-budget').value,
+                timeline: document.getElementById('project-timeline').value,
+                goals: document.getElementById('project-goals').value,
+                deliverables: document.getElementById('project-deliverables').value
+            };
+
+            // UI Transitions to loading state
+            emptyState.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+            docContent.classList.add('hidden');
+
+            try {
+                // Call our netlify serverless function endpoint
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('API Execution Interrupted');
+
+                const data = await response.json();
+                
+                // Success: Populate text and expose action capabilities
+                docContent.innerHTML = data.html;
+                
+                loadingState.classList.add('hidden');
+                docContent.classList.remove('hidden');
+                copyBtn.disabled = false;
+                pdfBtn.disabled = false;
+
+                // Burn one functional credit token post success
+                freeCredits -= 1;
+                localStorage.setItem('sow_credits', freeCredits);
+                document.getElementById('credit-count').innerText = freeCredits;
+
+            } catch (err) {
+                alert('Something went wrong generating the document. Please verify endpoint operations.');
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+        });
+
+        // Copy plain text markup helper
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(docContent.innerText);
+            alert('Document plaintext copied cleanly to clipboard!');
+        });
+
+        // PDF download compilation engine via client-side scripts
+        pdfBtn.addEventListener('click', () => {
+            const opt = {
+                margin:       [15, 15],
+                filename:     `${document.getElementById('project-title').value.replace(/\s+/g, '_')}_SOW.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, backgroundColor: '#ffffff' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            // Temporary hidden node built specifically to style pristine WHITE target pages for printable assets
+            const printTarget = document.createElement('div');
+            printTarget.style.color = '#000000';
+            printTarget.style.padding = '20px';
+            printTarget.innerHTML = `
+                <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+                    ${docContent.innerHTML}
+                </div>
+            `;
+            
+            html2pdf().set(opt).from(printTarget).save();
+        });
+    </script>
+</body>
+</html>
