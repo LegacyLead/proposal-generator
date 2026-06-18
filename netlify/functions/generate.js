@@ -70,6 +70,7 @@ Make the tone professional, authoritative, and legally defensive.
         };
 
     } catch (error) {
+        console.error("BACKEND ERROR ENGINE:", error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: error.message })
