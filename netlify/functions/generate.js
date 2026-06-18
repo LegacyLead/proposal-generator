@@ -1,27 +1,27 @@
-export async function handler(event, context) {
+export default async (request, context) => {
     // Only permit secure POST requests
-    if (event.httpMethod !== "POST") {
-        return {
-            statusCode: 405,
-            body: JSON.stringify({ error: "Method Not Allowed" })
-        };
+    if (request.method !== "POST") {
+        return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+            status: 405,
+            headers: { "Content-Type": "application/json" }
+        });
     }
 
     try {
-        const { title, client, budget, timeline, goals, deliverables } = JSON.parse(event.body);
+        const { title, client, budget, timeline, goals, deliverables } = await request.json();
         
         // Securely fetch our environment variable from Netlify cloud panel
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            return {
-                statusCode: 500,
-                body: JSON.stringify({ error: "API Key Configuration Missing on Server." })
-            };
+            return new Response(JSON.stringify({ error: "API Key Configuration Missing on Server." }), {
+                status: 500,
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
         // Build a hyper-focused executive prompt framework to guide the AI output
         const systemPrompt = `
-You are an expert enterprise project manager and legal engineering contractor. 
+You are an expert enterprise project management and legal engineering contractor. 
 Your job is to generate a comprehensive, highly professional Statement of Work (SOW) based on the parameters provided.
 
 Please structure the output using clean, semantic HTML elements (such as <h1>, <h2>, <p>, <ul>, <li>, and <strong>). Do not wrap the output in markdown code blocks (\`\`\`html) or raw markdown text. Output only valid inline HTML body content. Use clean spacings.
@@ -43,7 +43,7 @@ Make the tone professional, authoritative, and legally defensive.
                 parts: [{ text: systemPrompt }]
             }],
             generationConfig: {
-                temperature: 0.3 // Kept low for consistent, highly structured professional prose
+                temperature: 0.3
             }
         };
 
@@ -55,25 +55,24 @@ Make the tone professional, authoritative, and legally defensive.
 
         if (!response.ok) {
             const errData = await response.text();
-            throw new Error(`Gemini Engine Error: ${errData}`);
+            return new Response(JSON.stringify({ error: `Gemini Engine Error: ${errData}` }), {
+                status: response.status,
+                headers: { "Content-Type": "application/json" }
+            });
         }
 
         const data = await response.json();
-        
-        // Safely extract the structural text response from the API payload architecture
         const aiResponseText = data.candidates[0].content.parts[0].text;
 
-        return {
-            statusCode: 200,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ html: aiResponseText })
-        };
+        return new Response(JSON.stringify({ html: aiResponseText }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" }
+        });
 
     } catch (error) {
-        console.error("BACKEND ERROR ENGINE:", error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.message })
-        };
+        return new Response(JSON.stringify({ error: error.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" }
+        });
     }
-}
+};
